@@ -75,8 +75,8 @@ public class MainActivity extends AppCompatActivity {
         buttonSubtracao.setOnClickListener(v -> addOperator("-"));
         buttonMultiplicacao.setOnClickListener(v -> addOperator("*"));
         buttonPorcentagem.setOnClickListener(v -> {
-            if (!expressao.isEmpty()) {
-                expressao += "/100"; // Adiciona a divisão por 100 à expressão
+            if (!expressao.isEmpty() && !verificaSeASinalIgualLadoaLado(expressao)) {
+                expressao += "%";
                 textViewResultado.setText(expressao);
             }
         });
@@ -96,14 +96,25 @@ public class MainActivity extends AppCompatActivity {
         });
 
         buttonIgual.setOnClickListener(v -> {
-            String expressaoParaCalculo = expressao.replace(",", "."); // Substitui vírgula por ponto
+            String expressaoParaCalculo = expressao.replace(",", ".");
+            expressaoParaCalculo = expressaoParaCalculo.replaceAll(
+                    "(\\d+(?:\\.\\d+)?)%\\s*(\\d+(?:\\.\\d+)?)",
+                    "(($1/100)*$2)"
+            );
+            expressaoParaCalculo = expressaoParaCalculo.replaceAll(
+                    "(\\d+(?:\\.\\d+)?)%",
+                    "($1/100)*"
+            );
             try {
                 Calculable calc = new ExpressionBuilder(expressaoParaCalculo).build();
                 double resultado = calc.calculate();
+
                 expressaoAnterior = expressao;
                 expressao = String.valueOf(resultado);
-                textViewUltimaExpressao.setText(expressaoAnterior);
+
+                textViewUltimaExpressao.setText(expressaoAnterior + " =");
                 textViewResultado.setText(expressao);
+
             } catch (Exception e) {
                 Toast.makeText(MainActivity.this, "Expressão inválida", Toast.LENGTH_SHORT).show();
                 expressao = "";
@@ -113,7 +124,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
     private void addOperator(String operador) {
         if (!verificaSeASinalIgualLadoaLado(expressao)) {
             expressao += operador;
